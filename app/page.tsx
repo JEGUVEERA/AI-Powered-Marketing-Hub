@@ -1,29 +1,16 @@
-console.log({
-  Home,
-  ChatBot,
-  SocialMediaGenerator,
-  MarketingContentGenerator,
-  EmailGenerator,
-  SentimentAnalysis,
-  ImageGenerator,
-  TextToSpeech,
-  DataVisualization,
-  ChatHistory
-});
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Home } from "@/components/home"
-import { ChatBot } from "@/components/chat-bot"
-import { SocialMediaGenerator } from "@/components/social-media-generator"
-import { MarketingContentGenerator } from "@/components/marketing-content-generator"
-import { EmailGenerator } from "@/components/email-generator"
-import { SentimentAnalysis } from "@/components/sentiment-analysis"
-import { ImageGenerator } from "@/components/image-generator"
-import { TextToSpeech } from "@/components/text-to-speech"
-import { DataVisualization } from "@/components/data-visualization"
-import { ChatHistory } from "@/components/chat-history"
-
-
+// Use named imports for components if they are exported as named
+import { Home } from "@/components/home";
+import { ChatBot } from "@/components/chat-bot";
+import { SocialMediaGenerator } from "@/components/social-media-generator";
+import { MarketingContentGenerator } from "@/components/marketing-content-generator";  // Default import
+import { EmailGenerator } from "@/components/email-generator";
+import { SentimentAnalysis } from "@/components/sentiment-analysis";
+import { ImageGenerator } from "@/components/image-generator";
+import { TextToSpeech } from "@/components/text-to-speech";
+import { DataVisualizer } from "@/components/data-visualization";  // Default import
+import { ChatHistory } from "@/components/chat-history";
 
 export default function AIMarketingHub() {
   return (
@@ -77,7 +64,7 @@ export default function AIMarketingHub() {
         </TabsContent>
 
         <TabsContent value="data">
-          <DataVisualization />
+          <DataVisualizer />
         </TabsContent>
 
         <TabsContent value="history">
@@ -85,6 +72,5 @@ export default function AIMarketingHub() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
-
