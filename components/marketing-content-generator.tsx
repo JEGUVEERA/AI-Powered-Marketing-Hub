@@ -109,7 +109,7 @@ export function MarketingContentGenerator() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          platform: "social media",
+          platform: " marketing bot ",
           tone,
           content: ingredients,
           model: "gemini"
@@ -253,16 +253,15 @@ export function MarketingContentGenerator() {
               disabled={!marketingTopic.trim() || isGeneratingVariants}
               className="w-full"
             >
-              {isGeneratingVariants ? "Generating..." : "Generate Variants"}
+              {isGeneratingVariants ? "Generating Variants..." : "Generate A/B Variants"}
             </Button>
 
             {variants.length > 0 && (
-              <div className="mt-6 space-y-6">
-                <h3 className="font-medium">🎯 A/B Test Variants</h3>
+              <div className="mt-6 space-y-4">
                 {variants.map((variant, index) => (
                   <div key={index} className="rounded-lg border p-4">
-                    <h4 className="font-medium mb-2">Variant {index + 1}: {variant.style}</h4>
-                    <p>{variant.content}</p>
+                    <h4 className="font-medium mb-2">{variant.style === "error" ? "Error" : "Variant " + (index + 1)}</h4>
+                    <p className="whitespace-pre-line">{variant.content}</p>
                   </div>
                 ))}
               </div>
