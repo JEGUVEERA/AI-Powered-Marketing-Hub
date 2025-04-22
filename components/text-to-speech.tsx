@@ -1,58 +1,73 @@
-// app/components/TextToSpeech.tsx
-"use client"
+"use client";
 
-import { useState, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Download, Play, Pause, Volume2 } from "lucide-react"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Play, Pause, Volume2, Download } from "lucide-react";
 
 export function TextToSpeech() {
-  const [text, setText] = useState("")
-  const [voice, setVoice] = useState("male")
-  const [audioUrl, setAudioUrl] = useState<string | null>(null)
-  const [isConverting, setIsConverting] = useState(false)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [text, setText] = useState("");
+  const [voiceIndex, setVoiceIndex] = useState(0);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
-  const convertToSpeech = async () => {
-    if (!text.trim()) return
+  useEffect(() => {
+    const loadVoices = () => {
+      const availableVoices = window.speechSynthesis.getVoices();
+      setVoices(availableVoices);
+    };
 
-    setIsConverting(true)
-    setAudioUrl(null)
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }, []);
 
-    try {
-      const res = await fetch("/api/tts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text, voice }),
-      })
+  const convertToSpeech = () => {
+    if (!text.trim()) return;
 
-      const data = await res.json()
-      setAudioUrl(data.audioUrl)
-    } catch (err) {
-      console.error("Error converting to speech", err)
-    } finally {
-      setIsConverting(false)
-    }
-  }
+    setIsConverting(true);
+    const speech = new SpeechSynthesisUtterance(text);
+    speech.voice = voices[voiceIndex];
+    speech.onend = () => setIsPlaying(false);
+    window.speechSynthesis.speak(speech);
+    setIsPlaying(true);
+    setIsConverting(false);
+  };
 
   const togglePlayPause = () => {
-    if (!audioRef.current) return
     if (isPlaying) {
-      audioRef.current.pause()
+      window.speechSynthesis.pause();
     } else {
-      audioRef.current.play()
+      window.speechSynthesis.resume();
     }
-    setIsPlaying(!isPlaying)
-  }
+    setIsPlaying(!isPlaying);
+  };
 
-  const handleAudioEnded = () => {
-    setIsPlaying(false)
-  }
+  const generateDownloadableAudio = async () => {
+    if (!text.trim()) return;
+
+    try {
+      const language = voices[voiceIndex]?.lang || "en";
+      const response = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, language }),
+      });
+
+      const data = await response.json();
+      if (data.audioUrl) {
+        const audioResponse = await fetch(data.audioUrl);
+        const blob = await audioResponse.blob();
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url);
+      }
+    } catch (error) {
+      console.error("Failed to fetch audio:", error);
+    }
+  };
 
   return (
     <Card>
@@ -70,15 +85,19 @@ export function TextToSpeech() {
             placeholder="Type or paste text here..."
             rows={6}
           />
+
           <div>
             <label className="block text-sm font-medium mb-2">Select Voice</label>
-            <Select value={voice} onValueChange={setVoice}>
+            <Select value={voiceIndex.toString()} onValueChange={(value) => setVoiceIndex(parseInt(value))}>
               <SelectTrigger>
                 <SelectValue placeholder="Select voice" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="male">Male</SelectItem>
-                <SelectItem value="female">Female</SelectItem>
+                {voices.map((voice, index) => (
+                  <SelectItem key={index} value={index.toString()}>
+                    {voice.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -87,34 +106,29 @@ export function TextToSpeech() {
             {isConverting ? "Converting..." : "Convert to Speech"}
           </Button>
 
-          {audioUrl && (
-            <div className="mt-6 space-y-4">
-              <div className="rounded-lg border p-4">
-                <h3 className="font-medium mb-4">🔊 Generated Audio</h3>
-                <audio ref={audioRef} src={audioUrl} onEnded={handleAudioEnded} className="hidden" />
-                <div className="flex items-center gap-4">
-                  <Button onClick={togglePlayPause} variant="outline" size="icon" className="h-12 w-12 rounded-full">
-                    {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
-                  </Button>
-                  <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={`h-full bg-primary transition-all ${isPlaying ? "animate-progress" : ""}`}
-                      style={{ width: isPlaying ? "100%" : "0%" }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
+          <Button onClick={togglePlayPause} disabled={!text.trim()} variant="outline" className="w-full mt-2">
+            {isPlaying ? <Pause className="h-5 w-5 mr-2" /> : <Play className="h-5 w-5 mr-2" />}
+            {isPlaying ? "Pause" : "Play"}
+          </Button>
 
-              <a href={audioUrl} download className="block">
-                <Button variant="outline" className="w-full">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Audio
-                </Button>
+          <Button onClick={generateDownloadableAudio} disabled={!text.trim()} className="w-full mt-2">
+            Generate MP3
+          </Button>
+
+          {audioUrl && (
+            <div className="mt-4">
+              <a
+                href={audioUrl}
+                download="speech.mp3"
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download MP3
               </a>
             </div>
           )}
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
