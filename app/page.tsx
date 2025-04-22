@@ -9,7 +9,7 @@ import { EmailGenerator } from "@/components/email-generator";
 import { SentimentAnalysis } from "@/components/sentiment-analysis";
 import { ImageGenerator } from "@/components/image-generator";
 import { TextToSpeech } from "@/components/text-to-speech";
-import { DataVisualizer } from "@/components/data-visualization";  // Default import
+import DataVisualization from "@/components/data-visualization";  
 import { ChatHistory } from "@/components/chat-history";
 
 export default function AIMarketingHub() {
@@ -64,7 +64,7 @@ export default function AIMarketingHub() {
         </TabsContent>
 
         <TabsContent value="data">
-          <DataVisualizer />
+          <DataVisualization />
         </TabsContent>
 
         <TabsContent value="history">
