@@ -67,10 +67,6 @@ Contributions are welcome! Please follow these steps to contribute:
    ```
 5. Open a pull request in the original repository.
 
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
 ## Contact
 
 For any inquiries or issues, please contact [JEGUVEERA](https://github.com/JEGUVEERA).
