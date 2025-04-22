@@ -1,33 +1,24 @@
-// app/api/tts/route.ts (for App Router) or pages/api/tts.ts (for Pages Router)
-import { NextResponse } from "next/server"
-import { TextToSpeechClient } from "@google-cloud/text-to-speech"
-import fs from "fs"
-import path from "path"
-import util from "util"
-
-const writeFile = util.promisify(fs.writeFile)
-const client = new TextToSpeechClient()
+import { NextResponse } from "next/server";
+import googleTTS from "google-tts-api";
 
 export async function POST(req: Request) {
-  const { text, voice } = await req.json()
+  const { text, language } = await req.json();
 
-  const fileName = `tts-${Date.now()}.mp3`
-  const filePath = path.join("/tmp", fileName)
-
-  const request = {
-    input: { text },
-    voice: {
-      languageCode: "en-US",
-      ssmlGender: voice === "female" ? "FEMALE" : "MALE",
-    },
-    audioConfig: {
-      audioEncoding: "MP3",
-    },
+  if (!text || !language) {
+    return NextResponse.json({ error: "Missing text or language" }, { status: 400 });
   }
 
-  const [response] = await client.synthesizeSpeech(request)
-  await writeFile(filePath, response.audioContent as Buffer, "binary")
+  try {
+    const url = googleTTS.getAudioUrl(text, {
+      lang: language,
+      slow: false,
+      host: "https://translate.google.com",
+    });
 
-  const audioUrl = `/api/tts/audio?name=${fileName}`
-  return NextResponse.json({ audioUrl })
+    return NextResponse.json({ audioUrl: url });
+
+  } catch (error) {
+    console.error("Error generating speech:", error);
+    return NextResponse.json({ error: "Failed to generate audio" }, { status: 500 });
+  }
 }
