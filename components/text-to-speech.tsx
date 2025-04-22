@@ -27,7 +27,6 @@ export function TextToSpeech() {
 
   const convertToSpeech = () => {
     if (!text.trim()) return;
-
     setIsConverting(true);
     const speech = new SpeechSynthesisUtterance(text);
     speech.voice = voices[voiceIndex];
@@ -48,7 +47,6 @@ export function TextToSpeech() {
 
   const generateDownloadableAudio = async () => {
     if (!text.trim()) return;
-
     try {
       const language = voices[voiceIndex]?.lang || "en";
       const response = await fetch("/api/tts", {
@@ -57,13 +55,11 @@ export function TextToSpeech() {
         body: JSON.stringify({ text, language }),
       });
 
-      const data = await response.json();
-      if (data.audioUrl) {
-        const audioResponse = await fetch(data.audioUrl);
-        const blob = await audioResponse.blob();
-        const url = URL.createObjectURL(blob);
-        setAudioUrl(url);
-      }
+      if (!response.ok) throw new Error("TTS generation failed");
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      setAudioUrl(url);
     } catch (error) {
       console.error("Failed to fetch audio:", error);
     }
