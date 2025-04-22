@@ -5,6 +5,37 @@ import { AreaChart, BarChart, LineChart } from "@/components/charts"
 import { Button } from "@/components/ui/button"
 import { sampleCSVData } from "@/lib/sampleCSV"
 
+const cleanNumericData = (data: any[]) => {
+  return data.map((row) => {
+    const cleanedRow: any = {}
+    for (const key in row) {
+      let val = row[key]
+      if (typeof val === "string") {
+        // Remove commas and extract numeric part
+        const cleaned = val.replace(/,/g, "").match(/(\d+\.?\d*)/)
+        cleanedRow[key] = cleaned ? parseFloat(cleaned[1]) : NaN
+      } else {
+        cleanedRow[key] = val
+      }
+    }
+    return cleanedRow
+  })
+}
+
+const parseCSV = (file: File | string, isSample = false, onParsed: (data: any[]) => void) => {
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: (results) => {
+      let parsed = results.data.filter((row: any) =>
+        Object.values(row).some((val) => val !== null && val !== "")
+      )
+      parsed = cleanNumericData(parsed)
+      onParsed(parsed)
+    },
+  })
+}
+
 const DataVisualizer = () => {
   const [data, setData] = useState<any[]>([])
   const [selectedColumns, setSelectedColumns] = useState<string[]>([])
@@ -14,35 +45,20 @@ const DataVisualizer = () => {
   const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
-
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        const cleaned = results.data.filter(
-          (row: any) => Object.values(row).some((val) => val !== null && val !== "")
-        )
-        setData(cleaned)
-        const keys = Object.keys(cleaned[0] || {})
-        setSelectedColumns(keys.slice(1))
-        setIndexColumn(keys[0])
-      },
+    parseCSV(file, false, (parsed) => {
+      setData(parsed)
+      const keys = Object.keys(parsed[0] || {})
+      setSelectedColumns(keys.filter((k) => k !== keys[0]))
+      setIndexColumn(keys[0])
     })
   }
 
   const handleSampleData = () => {
-    Papa.parse(sampleCSVData, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        const cleaned = results.data.filter(
-          (row: any) => Object.values(row).some((val) => val !== null && val !== "")
-        )
-        setData(cleaned)
-        const keys = Object.keys(cleaned[0] || {})
-        setSelectedColumns(keys.slice(1))
-        setIndexColumn(keys[0])
-      },
+    parseCSV(sampleCSVData, true, (parsed) => {
+      setData(parsed)
+      const keys = Object.keys(parsed[0] || {})
+      setSelectedColumns(keys.filter((k) => k !== keys[0]))
+      setIndexColumn(keys[0])
     })
   }
 
@@ -84,9 +100,9 @@ const DataVisualizer = () => {
           <tbody>
             {data.slice(0, 100).map((row, rowIndex) => (
               <tr key={rowIndex}>
-                <td className="border px-2 py-1">{row[indexColumn]}</td>
+                <td className="border px-2 py-1">{safeValue(row[indexColumn])}</td>
                 {selectedColumns.map((col) => (
-                  <td key={col} className="border px-2 py-1">{row[col]}</td>
+                  <td key={col} className="border px-2 py-1">{safeValue(row[col])}</td>
                 ))}
               </tr>
             ))}
@@ -99,6 +115,12 @@ const DataVisualizer = () => {
         )}
       </div>
     )
+  }
+
+  // ✅ Safe conversion to string
+  const safeValue = (val: any): string => {
+    if (val === null || val === undefined || isNaN(val)) return "-"
+    return val.toString()
   }
 
   const chartElement = useMemo(() => renderRecharts(), [data, selectedColumns, chartType])
