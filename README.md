@@ -72,10 +72,5 @@ Contributions are welcome! Please follow these steps to contribute:
 For any inquiries or issues, please contact [JEGUVEERA](https://github.com/JEGUVEERA).
 ```
 
-You can create the `README.md` file by running the following command in your repository:
 
-```bash
-echo "# AI Marketing Hub" > README.md
-```
 
-Would you like me to assist further in setting this up or explain any part?
