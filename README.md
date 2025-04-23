@@ -48,24 +48,7 @@ To deploy the project, follow these steps:
    ```
 2. Deploy the generated files in the `dist/` directory to your hosting provider of choice (e.g., Vercel, Netlify).
 
-## Contributing
 
-Contributions are welcome! Please follow these steps to contribute:
-
-1. Fork this repository.
-2. Create a new branch:
-   ```bash
-   git checkout -b feature-name
-   ```
-3. Make your changes and commit them:
-   ```bash
-   git commit -m "Add feature-name"
-   ```
-4. Push the changes to your fork:
-   ```bash
-   git push origin feature-name
-   ```
-5. Open a pull request in the original repository.
 
 ## Contact
 
