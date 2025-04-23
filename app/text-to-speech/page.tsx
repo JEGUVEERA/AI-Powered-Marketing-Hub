@@ -146,3 +146,5 @@ export function TextToSpeech() {
     </Card>
   );
 }
+
+export default TextToSpeech;

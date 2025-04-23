@@ -193,3 +193,5 @@ export function SocialMediaGenerator() {
     </div>
   );
 }
+
+export default  SocialMediaGenerator;

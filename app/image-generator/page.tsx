@@ -192,3 +192,5 @@ export function ImageGenerator() {
     </div>
   )
 }
+
+export default ImageGenerator;

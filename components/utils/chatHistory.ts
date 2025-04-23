@@ -1,5 +1,3 @@
-//utils/chatHistory.ts
-// This file contains functions to save and retrieve chat history from local storage
 export interface ChatEntry {
     feature: string
     user: string

@@ -1,33 +1,45 @@
-// app/api/tts/route.ts (for App Router) or pages/api/tts.ts (for Pages Router)
-import { NextResponse } from "next/server"
-import { TextToSpeechClient } from "@google-cloud/text-to-speech"
-import fs from "fs"
-import path from "path"
-import util from "util"
+// app/api/tts/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { spawn } from "child_process";
+import { readFile, unlink } from "fs/promises";
+import path from "path";
+import { v4 as uuidv4 } from "uuid";
+import os from "os";
 
-const writeFile = util.promisify(fs.writeFile)
-const client = new TextToSpeechClient()
+export async function POST(req: NextRequest) {
+  const { text, language } = await req.json();
+  const id = uuidv4();
+  const filename = `${id}.mp3`;
+  const filepath = path.join(os.tmpdir(), filename);
 
-export async function POST(req: Request) {
-  const { text, voice } = await req.json()
+  try {
+    console.log("Generating TTS via Python script...");
 
-  const fileName = `tts-${Date.now()}.mp3`
-  const filePath = path.join("/tmp", fileName)
+    await new Promise((resolve, reject) => {
+      const py = spawn("python", ["tts.py", text, language || "en", filepath]);
 
-  const request = {
-    input: { text },
-    voice: {
-      languageCode: "en-US",
-      ssmlGender: voice === "female" ? "FEMALE" : "MALE",
-    },
-    audioConfig: {
-      audioEncoding: "MP3",
-    },
+      py.stderr.on("data", (data) => {
+        console.error(`stderr: ${data}`);
+      });
+
+      py.on("close", (code) => {
+        if (code === 0) resolve(true);
+        else reject(new Error("Python TTS script failed"));
+      });
+    });
+
+    const audioBuffer = await readFile(filepath);
+    await unlink(filepath);
+
+    return new NextResponse(audioBuffer, {
+      status: 200,
+      headers: {
+        "Content-Type": "audio/mpeg",
+        "Content-Disposition": `attachment; filename="speech.mp3"`,
+      },
+    });
+  } catch (err) {
+    console.error("TTS generation failed:", err);
+    return NextResponse.json({ error: "Failed to generate audio" }, { status: 500 });
   }
-
-  const [response] = await client.synthesizeSpeech(request)
-  await writeFile(filePath, response.audioContent as Buffer, "binary")
-
-  const audioUrl = `/api/tts/audio?name=${fileName}`
-  return NextResponse.json({ audioUrl })
 }

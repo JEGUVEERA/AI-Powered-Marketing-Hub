@@ -201,3 +201,5 @@ export function ChatBot() {
     </Card>
   )
 }
+
+export default ChatBot;

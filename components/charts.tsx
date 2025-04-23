@@ -1,12 +1,13 @@
-// components/charts.tsx
+
 "use client"
+
 import {
   LineChart as ReLineChart,
   Line,
   BarChart as ReBarChart,
   Bar,
   AreaChart as ReAreaChart,
-  Area,
+  Area, 
   CartesianGrid,
   XAxis,
   YAxis,

@@ -1,29 +1,29 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const { type, topic, model, platform, tone, content } = body
+    const body = await request.json();
+    const { type, topic, model, platform, tone, content } = body;
 
     if (!GEMINI_API_KEY) {
-      return NextResponse.json({ error: 'Missing Gemini API key' }, { status: 500 })
+      return NextResponse.json({ error: 'Missing Gemini API key' }, { status: 500 });
     }
+
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
     // A/B test generation
     if (type === 'ab_test') {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    text: `Generate 3 different marketing content variants for: "${topic}"
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `Generate 3 different marketing content variants for: "${topic}"
 
 Requirements:
 1. Each variant should have a distinct style (e.g., emotional, factual, humorous)
@@ -33,81 +33,96 @@ Requirements:
 Output format for each variant:
 Style: [style name]
 Content: [marketing content]
----`
-                  }
-                ]
-              }
-            ]
-          })
-        }
-      )
+---`,
+                },
+              ],
+            },
+          ],
+        }),
+      });
 
-      const data = await response.json()
+      const textResponse = await response.text();
+      console.log('A/B Test API Response:', textResponse);
 
       if (!response.ok) {
-        console.error('Gemini API Error:', data)
-        return NextResponse.json({ error: 'Failed to generate variants' }, { status: 500 })
+        console.error('Gemini API Error:', textResponse);
+        return NextResponse.json({ error: 'Failed to generate variants' }, { status: 500 });
       }
 
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-      const variantTexts = text.split('---').filter(Boolean)
+      let data;
+      try {
+        data = JSON.parse(textResponse);
+      } catch (parseError) {
+        console.error('Error parsing JSON:', parseError);
+        return NextResponse.json({ error: 'Failed to parse JSON response' }, { status: 500 });
+      }
 
-      const variants = variantTexts.map(variant => {
-        const [styleLine, contentLine] = variant.split('\n').filter(Boolean)
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!text) {
+        return NextResponse.json({ error: 'No content generated for A/B test.' }, { status: 400 });
+      }
+
+      const variantTexts = text.split('---').filter(Boolean);
+
+      const variants = variantTexts.map((variant : any) => {
+        const [styleLine, contentLine] = variant.split('\n').filter(Boolean);
         return {
           style: styleLine.replace('Style:', '').trim(),
-          content: contentLine.replace('Content:', '').trim()
-        }
-      })
+          content: contentLine.replace('Content:', '').trim(),
+        };
+      });
 
-      return NextResponse.json({ variants })
+      return NextResponse.json({ variants });
     }
 
     // Regular content generation (not ab_test)
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `As a marketing assistant, create a ${tone} post for ${platform} about: "${content}"
+    const prompt = `As a ${tone} marketing assistant, create an engaging ${platform} post for: "${content}". Add relevant hashtags.`;
 
-Requirements:
-1. Tailor content to the ${platform} platform
-2. Use emojis and persuasive language
-3. Include 2-3 relevant hashtags
-4. Keep it short, engaging, and on-brand
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt,
+              },
+            ],
+          },
+        ],
+      }),
+    });
 
-Output format:
-[Post Content]
----
-[Hashtags]`
-                }
-              ]
-            }
-          ]
-        })
-      }
-    )
-
-    const data = await response.json()
+    const textResponse = await response.text();
+    console.log('Regular Content API Response:', textResponse);
 
     if (!response.ok) {
-      console.error('Gemini API Error:', data)
-      return NextResponse.json({ error: 'Failed to generate content' }, { status: 500 })
+      console.error('Gemini API Error:', textResponse);
+      return NextResponse.json({ error: 'Failed to generate content' }, { status: 500 });
     }
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-    const [post, hashtags] = text.split('---').map(str => str.trim())
+    let data;
+    try {
+      data = JSON.parse(textResponse);
+    } catch (parseError) {
+      console.error('Error parsing JSON:', parseError);
+      return NextResponse.json({ error: 'Failed to parse JSON response' }, { status: 500 });
+    }
 
-    return NextResponse.json({ post, hashtags })
+    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (!generatedText) {
+      return NextResponse.json({ error: 'No content generated. Try another query.' }, { status: 400 });
+    }
+
+    const [post, hashtags] = generatedText.split('---').map((str : any) => str.trim());
+
+    return NextResponse.json({
+      post,
+      hashtags: hashtags || generatedText.match(/#\w+/g)?.join(' ') || '',
+    });
   } catch (error) {
-    console.error('Error in generate route:', error)
-    return NextResponse.json({ error: 'Failed to generate content' }, { status: 500 })
+    console.error('Error in API route:', error);
+    return NextResponse.json({ error: 'Server error while generating content' }, { status: 500 });
   }
 }
-

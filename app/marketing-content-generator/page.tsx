@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download, Sparkles } from "lucide-react"
+import { m } from "framer-motion"
 
 const marketingKeywords = [
   "product name", "product features", "product benefits", "product pricing", "product launch","product reviews", "product comparison",
@@ -267,3 +268,5 @@ export function MarketingContentGenerator() {
     </div>
   )
 }
+
+export default MarketingContentGenerator;
