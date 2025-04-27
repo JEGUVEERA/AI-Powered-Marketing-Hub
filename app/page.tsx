@@ -1,3 +1,4 @@
+
 "use client"
 
 import type React from "react"
@@ -42,6 +43,7 @@ export default function Home() {
       setIsLoading(false)
     }
   }
+
 
   return (
     <div className="flex items-center justify-center min-h-[80vh] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
@@ -90,5 +92,5 @@ export default function Home() {
         </form>
       </Card>
     </div>
-  )
+  );
 }

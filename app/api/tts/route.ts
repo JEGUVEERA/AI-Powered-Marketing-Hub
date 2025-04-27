@@ -1,3 +1,4 @@
+
 // app/api/tts/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { spawn } from "child_process";
@@ -17,6 +18,7 @@ export async function POST(req: NextRequest) {
 
     await new Promise((resolve, reject) => {
       const py = spawn("python", ["tts.py", text, language || "en", filepath]);
+
 
       py.stderr.on("data", (data) => {
         console.error(`stderr: ${data}`);
