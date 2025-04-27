@@ -1,3 +1,4 @@
+
 Here’s a basic `README.md` template for your project `AI-MARKETING-HUB`. You can customize it further to suit your project's details:
 
 ```markdown
@@ -57,3 +58,6 @@ For any inquiries or issues, please contact [JEGUVEERA](https://github.com/JEGUV
 
 
 
+=======
+# AI-Powered-Marketing-Hub
+>>>>>>> 646f3ce1241a6cff1491b2f2d10a82705c0d0bdf
